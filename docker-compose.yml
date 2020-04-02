@@ -1,0 +1,39 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v2.0.0-rc3"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80" #tell traefik to listen for connections on port 80
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  whoami:
+    image: "containous/whoami"
+    container_name: "simple-service"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+
+  aspnetapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: "aspnetapp_service"
+    labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.aspnetapp.rule=Host(`aspnetapp.localhost`)"
+        - "traefik.http.routers.aspnetapp.entrypoints=web"    
+    ports:
+      - "5000:80"
+
